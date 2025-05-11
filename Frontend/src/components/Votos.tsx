@@ -61,11 +61,10 @@ function Votos({ param, nextParam }: VotosProps) {
         setEM(data.EM);
         setBERA(data.BERA);
 
-        // Obtener y establecer el nombre del lugar
         if (data.nombre_lugar) {
             setNombreLugar(data.nombre_lugar);
         } else {
-            setNombreLugar("Lugar desconocido");
+            setNombreLugar("Venezuela");
         }
     };
 

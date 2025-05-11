@@ -9,7 +9,7 @@ function Header() {
           <h1 className="text-3xl font-extrabold tracking-wide">
             Votos de Venezuela 2024
           </h1>
-          <button className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition cursor-pointer">
+          <button onClick = { () => navigate("/login") } className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition cursor-pointer">
             Iniciar Sesión
           </button>
         </div>

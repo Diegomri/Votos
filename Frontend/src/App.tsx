@@ -5,6 +5,8 @@ import Home from './pages/Home';
 import Buttons from './components/Buttons';
 import Tables_Votos from './components/Tables_votos';
 import SearchResults from "./pages/SearchResults";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 function App() {
   const [estados, setEstados] = useState([]);
@@ -130,9 +132,12 @@ function App() {
             />}/>
 
         <Route
-          path = "search"
+          path = "/search"
           element = {
             <SearchResults/>}/>
+        <Route path = "/login" element = {<Login/>}/>
+        <Route path = "/register" element = {<Register/>}/>
+
       </Routes>
     </Router>
     </div>

@@ -1,7 +1,8 @@
 from flask import request, jsonify
 from sqlalchemy import or_
-from config import app, db
+from config import app, db, jwt
 from models import Estado, Municipio, Parroquia, Centro, Mesa
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 import pandas as pd
 import os
 
@@ -105,32 +106,30 @@ def get_votos():
 def get_votos_lugares(lugar):
     cod = lugar[1:]
     json = {}
-    nombre_lugar = "Lugar desconocido"  # Default value
-
     if is_estado(lugar):
-        estado = Estado.query.filter_by(cod_edo=cod).first()
-        nombre_lugar = estado.name if estado else nombre_lugar
-        mesas = Mesa.query.filter_by(cod_edo=cod)
+        mesas = Mesa.query.filter_by(cod_edo = cod)
+        json_mesas = list(map(lambda e: e.to_json(), mesas))
+        json = sumar_votos(json_mesas)
     elif is_mun(lugar):
-        municipio = Municipio.query.filter_by(id=lugar).first()
-        nombre_lugar = municipio.name if municipio else nombre_lugar
-        mesas = Mesa.query.filter_by(mun_id=lugar)
+        mesas = Mesa.query.filter_by(mun_id = lugar)
+        json_mesas = list(map(lambda e: e.to_json(), mesas))
+        json = sumar_votos(json_mesas)
     elif is_parroquia(lugar):
-        parroquia = Parroquia.query.filter_by(cod_par=cod).first()
-        nombre_lugar = parroquia.name if parroquia else nombre_lugar
-        mesas = Mesa.query.filter_by(cod_par=cod)
+        mesas = Mesa.query.filter_by(cod_par = cod)
+        json_mesas = list(map(lambda e: e.to_json(), mesas))
+        json = sumar_votos(json_mesas)
     elif is_centro(lugar):
-        centro = Centro.query.filter_by(name=cod).first()
-        nombre_lugar = centro.name if centro else nombre_lugar
-        mesas = Mesa.query.filter_by(centro=cod)
-    else:
-        return jsonify({"error": "Lugar no válido"}), 400
-
-    json_mesas = list(map(lambda e: e.to_json(), mesas))
-    json = sumar_votos(json_mesas, nombre_lugar)
+        centro = Centro.query.filter_by(name = cod).first()
+        parroquia = Parroquia.query.filter_by(cod_par = centro.cod_par).first()
+        mesas = Mesa.query.filter_by(centro = cod)
+        json_mesas = list(map(lambda e: e.to_json(), mesas))
+        json = sumar_votos(json_mesas)
+        votos_par = get_votos_lugares(f"P{parroquia.cod_par}").to_json()
+        return json
     return json, 200
 
-def sumar_votos(json_mesas, nombre_lugar="Venezuela"):
+
+def sumar_votos(json_mesas):
     votos_validos = 0
     votos_nulos = 0
     EG = 0
@@ -157,7 +156,6 @@ def sumar_votos(json_mesas, nombre_lugar="Venezuela"):
         DC += mesa["DC"]
         EM += mesa["EM"]
         BERA += mesa["BERA"]
-
     votos_totales = votos_nulos + votos_validos
     return jsonify({
         "votos_totales": votos_totales,
@@ -171,9 +169,8 @@ def sumar_votos(json_mesas, nombre_lugar="Venezuela"):
         "CF": CF,
         "DC": DC,
         "EM": EM,
-        "BERA": BERA,
-        "nombre_lugar": nombre_lugar  # Include the location name
-    })
+        "BERA": BERA}
+        )
 
 def is_estado(lugar):
     if lugar[0] == ("E"):
@@ -224,11 +221,6 @@ def is_centro(lugar):
         return False
     
 
-from flask import request, jsonify
-from sqlalchemy import or_, inspect
-from config import app, db
-from models import Estado, Municipio, Parroquia, Centro, Mesa
-
 @app.route("/search")
 def search_tables():
     search_term = request.args.get('q')
@@ -275,7 +267,17 @@ def search_tables():
 
     return jsonify(results)
 
+@app.route("/token", methods=["POST"])
+def create_token():
+    data = request.json.get()
+    email = data.get("email", None)
+    password = data.get("password", None)
 
+    if email != "test" or password != "test":
+        return jsonify({"msg": "Bad username or password"}), 401
+
+    access_token = create_access_token(identity=email)
+    return jsonify(access_token=access_token), 200
 
 if __name__ == "__main__":
     with app.app_context():
