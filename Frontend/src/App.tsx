@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Home from './pages/Home';
 import Buttons from './components/Buttons';
+import Tables_Votos from './components/Tables_votos';
 
 function App() {
   const [estados, setEstados] = useState([]);
@@ -121,9 +122,11 @@ function App() {
         
         <Route 
           path="/mesas/:centro" 
-          element={"x"
-          } 
-        />
+          element={
+            <Tables_Votos
+              mesas={mesas}
+              currentParam="centro"
+            />}/>
       </Routes>
     </Router>
     </div>
