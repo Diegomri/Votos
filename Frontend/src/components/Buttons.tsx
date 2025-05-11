@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import Votos from './Votos';
 
 interface Lugar {
     [key: string]: string | number;
@@ -44,6 +45,7 @@ function Botones({
                     </button>
                 ))}
             </div>
+            <Votos param = {paramValue} nextParam = {nextParam}/>
         </div>
     );
 }

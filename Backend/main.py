@@ -109,11 +109,11 @@ def get_votos_lugares(lugar):
         json_mesas = list(map(lambda e: e.to_json(), mesas))
         json = sumar_votos(json_mesas)
     elif is_mun(lugar):
-        mesas = Mesa.query.filter_by(mun_id = cod)
+        mesas = Mesa.query.filter_by(mun_id = lugar)
         json_mesas = list(map(lambda e: e.to_json(), mesas))
         json = sumar_votos(json_mesas)
     elif is_parroquia(lugar):
-        mesas = Mesa.query.filter_by(cod_edo = cod)
+        mesas = Mesa.query.filter_by(cod_par = cod)
         json_mesas = list(map(lambda e: e.to_json(), mesas))
         json = sumar_votos(json_mesas)
     elif is_centro(lugar):
@@ -219,9 +219,9 @@ def is_centro(lugar):
     
 
 
-@app.route("/buscar/", methods=["GET"])
+@app.route("/search", methods=["GET"])
 def buscar():
-    query = request.args.get("query", "").strip()
+    query = request.args.get("q", "").strip()
 
     resultados = {
         "estados": list(map(lambda e: e.to_json(), Estado.query.filter(Estado.name.ilike(f"%{query}%")).all())),
