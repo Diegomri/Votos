@@ -33,6 +33,9 @@ function Botones({
 
     return (
         <div className="flex flex-col items-center justify-center bg-gradient-to-r from-blue-300 to-purple-200">
+            <div className="mt-4">
+                <Votos param = {paramValue} nextParam = {nextParam}/>
+            </div>
             <div id="botones" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">
                 {filteredLugares.map(lugar => (
                     <button
@@ -45,7 +48,7 @@ function Botones({
                     </button>
                 ))}
             </div>
-            <Votos param = {paramValue} nextParam = {nextParam}/>
+            
         </div>
     );
 }

@@ -3,7 +3,7 @@ from config import db
 class Estado(db.Model):
     __tablename__ = 'estados'
     cod_edo = db.Column(db.Integer, primary_key = True, autoincrement = False)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False, index = True)
     def to_json(self):
         return {
             'cod_edo': self.cod_edo,
@@ -14,7 +14,7 @@ class Municipio(db.Model):
     __tablename__ = 'municipios'
     id = db.Column(db.String, primary_key = True, autoincrement = False)
     cod_mun = db.Column(db.Integer)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False, index = True)
     cod_edo = db.Column(db.Integer)
     def to_json(self):
         return {
@@ -27,7 +27,7 @@ class Municipio(db.Model):
 class Parroquia(db.Model):
     __tablename__ = 'parroquias'
     cod_par = db.Column(db.Integer, primary_key = True, autoincrement = False)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False, index = True)
     cod_mun = db.Column(db.Integer)
     mun_id = db.Column(db.String)
     cod_edo = db.Column(db.Integer)
@@ -42,7 +42,7 @@ class Parroquia(db.Model):
 
 class Centro(db.Model):
     __tablename__ = 'centros'
-    name = db.Column(db.Integer, primary_key = True, autoincrement = False)
+    name = db.Column(db.Integer, primary_key = True, autoincrement = False, index = True)
     cod_par = db.Column(db.Integer)
     mun_id = db.Column(db.String)
     cod_edo = db.Column(db.Integer)
@@ -58,7 +58,7 @@ class Centro(db.Model):
 class Mesa(db.Model):
     __tablename__ = 'mesas'
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
-    name = db.Column(db.Integer)
+    name = db.Column(db.Integer, index = True)
     centro = db.Column(db.Integer)
     cod_par = db.Column(db.Integer)
     mun_id = db.Column(db.String)

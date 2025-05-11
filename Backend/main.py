@@ -1,4 +1,5 @@
 from flask import request, jsonify
+from sqlalchemy import or_
 from config import app, db
 from models import Estado, Municipio, Parroquia, Centro, Mesa
 import pandas as pd
@@ -104,29 +105,32 @@ def get_votos():
 def get_votos_lugares(lugar):
     cod = lugar[1:]
     json = {}
+    nombre_lugar = "Lugar desconocido"  # Default value
+
     if is_estado(lugar):
-        mesas = Mesa.query.filter_by(cod_edo = cod)
-        json_mesas = list(map(lambda e: e.to_json(), mesas))
-        json = sumar_votos(json_mesas)
+        estado = Estado.query.filter_by(cod_edo=cod).first()
+        nombre_lugar = estado.name if estado else nombre_lugar
+        mesas = Mesa.query.filter_by(cod_edo=cod)
     elif is_mun(lugar):
-        mesas = Mesa.query.filter_by(mun_id = lugar)
-        json_mesas = list(map(lambda e: e.to_json(), mesas))
-        json = sumar_votos(json_mesas)
+        municipio = Municipio.query.filter_by(id=lugar).first()
+        nombre_lugar = municipio.name if municipio else nombre_lugar
+        mesas = Mesa.query.filter_by(mun_id=lugar)
     elif is_parroquia(lugar):
-        mesas = Mesa.query.filter_by(cod_par = cod)
-        json_mesas = list(map(lambda e: e.to_json(), mesas))
-        json = sumar_votos(json_mesas)
+        parroquia = Parroquia.query.filter_by(cod_par=cod).first()
+        nombre_lugar = parroquia.name if parroquia else nombre_lugar
+        mesas = Mesa.query.filter_by(cod_par=cod)
     elif is_centro(lugar):
-        centro = Centro.query.filter_by(name = cod).first()
-        parroquia = Parroquia.query.filter_by(cod_par = centro.cod_par).first()
-        mesas = Mesa.query.filter_by(centro = cod)
-        json_mesas = list(map(lambda e: e.to_json(), mesas))
-        json = sumar_votos(json_mesas)
-        votos_par = get_votos_lugares(f"P{parroquia.cod_par}").to_json()
-        return json
+        centro = Centro.query.filter_by(name=cod).first()
+        nombre_lugar = centro.name if centro else nombre_lugar
+        mesas = Mesa.query.filter_by(centro=cod)
+    else:
+        return jsonify({"error": "Lugar no válido"}), 400
+
+    json_mesas = list(map(lambda e: e.to_json(), mesas))
+    json = sumar_votos(json_mesas, nombre_lugar)
     return json, 200
 
-def sumar_votos(json_mesas):
+def sumar_votos(json_mesas, nombre_lugar="Venezuela"):
     votos_validos = 0
     votos_nulos = 0
     EG = 0
@@ -153,6 +157,7 @@ def sumar_votos(json_mesas):
         DC += mesa["DC"]
         EM += mesa["EM"]
         BERA += mesa["BERA"]
+
     votos_totales = votos_nulos + votos_validos
     return jsonify({
         "votos_totales": votos_totales,
@@ -166,8 +171,9 @@ def sumar_votos(json_mesas):
         "CF": CF,
         "DC": DC,
         "EM": EM,
-        "BERA": BERA}
-        )
+        "BERA": BERA,
+        "nombre_lugar": nombre_lugar  # Include the location name
+    })
 
 def is_estado(lugar):
     if lugar[0] == ("E"):
@@ -218,23 +224,58 @@ def is_centro(lugar):
         return False
     
 
+from flask import request, jsonify
+from sqlalchemy import or_, inspect
+from config import app, db
+from models import Estado, Municipio, Parroquia, Centro, Mesa
 
-@app.route("/search", methods=["GET"])
-def buscar():
-    query = request.args.get("q", "").strip()
+@app.route("/search")
+def search_tables():
+    search_term = request.args.get('q')
+    if not search_term:
+        return jsonify({'error': 'Parámetro "q" requerido'}), 400
+    
+    results = []
+    models = [Estado, Municipio, Parroquia, Centro, Mesa]
 
-    resultados = {
-        "estados": list(map(lambda e: e.to_json(), Estado.query.filter(Estado.name.ilike(f"%{query}%")).all())),
-        "municipios": list(map(lambda m: m.to_json(), Municipio.query.filter(Municipio.name.ilike(f"%{query}%")).all())),
-        "parroquias": list(map(lambda p: p.to_json(), Parroquia.query.filter(Parroquia.name.ilike(f"%{query}%")).all())),
-        "centros": list(map(lambda c: c.to_json(), Centro.query.filter(Centro.name.ilike(f"%{query}%")).all())),
-        "mesas": list(map(lambda ms: ms.to_json(), Mesa.query.filter(Mesa.name.ilike(f"%{query}%")).all()))
-    }
+    for model in models:
+        columns = [col for col in model.__table__.columns if isinstance(col.type, db.String)]
+        
+        if not columns:
+            continue
+        
+        filters = or_(*[col.ilike(f'%{search_term}%') for col in columns])
+        
+        try:
+            records = model.query.filter(filters).all()
+            for record in records:
+                tabla = model.__name__
+                if tabla == "Estado":
+                    results.append({
+                    'tabla': model.__name__,
+                    'registro': record.to_json()})
+                elif tabla == "Municipio":
+                    edo = Estado.query.filter_by(cod_edo=record.cod_edo).first()
+                    results.append({
+                    'tabla': model.__name__,
+                    'registro': record.to_json(),
+                    'estado': edo.to_json().get('name')
+                })
+                elif tabla == "Parroquia":
+                    edo = Estado.query.filter_by(cod_edo=record.cod_edo).first()
+                    mun = Municipio.query.filter_by(id=record.mun_id).first()
+                    results.append({
+                    'tabla': model.__name__,
+                    'registro': record.to_json(),
+                    'estado': edo.to_json().get('name'),
+                    'municipio': mun.to_json().get('name')
+                })
+        except Exception as e:
+            app.logger.error(f"Error buscando en {model.__name__}: {str(e)}")
 
-    if not any(resultados.values()):
-        return jsonify({"message": "No se encontraron resultados para el query proporcionado"}), 404
+    return jsonify(results)
 
-    return jsonify(resultados), 200
+
 
 if __name__ == "__main__":
     with app.app_context():

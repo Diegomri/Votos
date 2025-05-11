@@ -18,6 +18,7 @@ function Votos({ param, nextParam }: VotosProps) {
     const [DC, setDC] = useState(0);
     const [EM, setEM] = useState(0);
     const [BERA, setBERA] = useState(0);
+    const [nombreLugar, setNombreLugar] = useState(""); // Nuevo estado para el nombre del lugar
 
     useEffect(() => {
         fetchVotos();
@@ -42,8 +43,11 @@ function Votos({ param, nextParam }: VotosProps) {
         }
         url = param ? `${url}/${x}${param}` : url;
         console.log(url);
+
         const getResponse = await fetch(url);
         const data = await getResponse.json();
+
+        // Actualizar los estados con los datos obtenidos
         setVotos_totales(data.votos_totales);
         setVotos_nulos(data.votos_nulos);
         setEG(data.EG);
@@ -56,12 +60,21 @@ function Votos({ param, nextParam }: VotosProps) {
         setDC(data.DC);
         setEM(data.EM);
         setBERA(data.BERA);
+
+        // Obtener y establecer el nombre del lugar
+        if (data.nombre_lugar) {
+            setNombreLugar(data.nombre_lugar);
+        } else {
+            setNombreLugar("Lugar desconocido");
+        }
     };
 
     return (
         <div className="p-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-center text-white mb-4">Resultados de Votos</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <h2 className="text-2xl font-bold text-center text-white mb-4">
+                Resultados de Votos {nombreLugar && `- ${nombreLugar}`}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 text-center">
                 <div className="bg-white text-black p-4 rounded-lg shadow-md">
                     <p className="font-semibold">Votos Totales</p>
                     <p>{votos_totales}</p>

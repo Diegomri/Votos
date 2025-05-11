@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Home from './pages/Home';
 import Buttons from './components/Buttons';
 import Tables_Votos from './components/Tables_votos';
+import SearchResults from "./pages/SearchResults";
 
 function App() {
   const [estados, setEstados] = useState([]);
@@ -127,6 +128,11 @@ function App() {
               mesas={mesas}
               currentParam="centro"
             />}/>
+
+        <Route
+          path = "search"
+          element = {
+            <SearchResults/>}/>
       </Routes>
     </Router>
     </div>
