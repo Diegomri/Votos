@@ -105,47 +105,17 @@ def get_votos_lugares(lugar):
     cod = lugar[1:]
     json = {}
     if is_estado(lugar):
-        municipios = Municipio.query.filter_by(cod_edo = cod)
-        lista_anidada = []
-        lista_json =[]
-        for municipio in municipios:
-            parroquias = Parroquia.query.filter_by(mun_id = municipio.id)
-            for parroquia in parroquias:
-                centros = Centro.query.filter_by(cod_par = parroquia.cod_par)
-                for centro in centros:
-                    mesas = Mesa.query.filter_by(centro = centro.name)
-                    json_mesas = list(map(lambda e: e.to_json(), mesas))
-                    lista_anidada.append(json_mesas)
-        for sublista in lista_anidada:
-            for elemento in sublista:
-                lista_json.append(elemento)
-        json = sumar_votos(lista_json)
+        mesas = Mesa.query.filter_by(cod_edo = cod)
+        json_mesas = list(map(lambda e: e.to_json(), mesas))
+        json = sumar_votos(json_mesas)
     elif is_mun(lugar):
-        parroquias = Parroquia.query.filter_by(mun_id = lugar)
-        lista_anidada = []
-        lista_json =[]
-        for parroquia in parroquias:
-            centros = Centro.query.filter_by(cod_par = parroquia.cod_par)
-            for centro in centros:
-                mesas = Mesa.query.filter_by(centro = centro.name)
-                json_mesas = list(map(lambda e: e.to_json(), mesas))
-                lista_anidada.append(json_mesas)
-        for sublista in lista_anidada:
-            for elemento in sublista:
-                lista_json.append(elemento)
-        json = sumar_votos(lista_json)
+        mesas = Mesa.query.filter_by(mun_id = cod)
+        json_mesas = list(map(lambda e: e.to_json(), mesas))
+        json = sumar_votos(json_mesas)
     elif is_parroquia(lugar):
-        centros = Centro.query.filter_by(cod_par = cod)
-        lista_anidada = []
-        lista_json =[]
-        for centro in centros:
-            mesas = Mesa.query.filter_by(centro = centro.name)
-            json_mesas = list(map(lambda e: e.to_json(), mesas))
-            lista_anidada.append(json_mesas)
-        for sublista in lista_anidada:
-            for elemento in sublista:
-                lista_json.append(elemento)
-        json = sumar_votos(lista_json)
+        mesas = Mesa.query.filter_by(cod_edo = cod)
+        json_mesas = list(map(lambda e: e.to_json(), mesas))
+        json = sumar_votos(json_mesas)
     elif is_centro(lugar):
         centro = Centro.query.filter_by(name = cod).first()
         parroquia = Parroquia.query.filter_by(cod_par = centro.cod_par).first()
