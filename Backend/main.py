@@ -1,10 +1,16 @@
 from flask import request, jsonify
 from sqlalchemy import or_
 from config import app, db, jwt
-from models import Estado, Municipio, Parroquia, Centro, Mesa
+from models import Estado, Municipio, Parroquia, Centro, Mesa, User, bcrypt
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 import pandas as pd
 import os
+import re
+
+bcrypt.init_app(app)
+PASSWORD_REGEX = re.compile(
+    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
+)
 
 @app.route("/leer_api")
 def leer_api():
@@ -267,18 +273,74 @@ def search_tables():
 
     return jsonify(results)
 
-@app.route("/token", methods=["POST"])
-def create_token():
-    data = request.json.get()
-    email = data.get("email", None)
-    password = data.get("password", None)
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
 
-    if email != "test" or password != "test":
-        return jsonify({"msg": "Bad username or password"}), 401
+    if not email or not password:
+        return jsonify({'message': 'Faltan campos requeridos'}), 400
+    
+    if not PASSWORD_REGEX.match(password):
+        return jsonify({'message': 'La contraseña no cumple los requisitos'}), 400
 
-    access_token = create_access_token(identity=email)
+    if User.query.filter_by(email=email).first():
+        return jsonify({'message': 'El usuario ya existe'}), 400
+
+    user = User(email=email)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({'message': 'Usuario registrado exitosamente'}), 201
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user or not user.check_password(password):
+        return jsonify({'message': 'Credenciales inválidas'}), 401
+    
+    access_token = create_access_token(identity=str(user.id))
     return jsonify(access_token=access_token), 200
 
+@app.route('/change-password', methods=['POST'])
+@jwt_required()
+def change_password():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"message": "No se recibieron datos"}), 400
+
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+
+        if not all([current_password, new_password]):
+            return jsonify({"message": "Faltan campos requeridos"}), 400
+
+        user_id = int(get_jwt_identity()) 
+        user = User.query.get(user_id)
+
+        if not user.check_password(current_password):
+            return jsonify({"message": "Contraseña actual incorrecta"}), 401
+
+        if not PASSWORD_REGEX.match(new_password):
+            return jsonify({"message": "La nueva contraseña no cumple los requisitos"}), 400
+
+        user.set_password(new_password)
+        db.session.commit()
+
+        return jsonify({"message": "Contraseña actualizada exitosamente"}), 200
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({"message": "Error interno del servidor"}), 500
+    
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()

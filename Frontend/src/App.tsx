@@ -3,10 +3,14 @@ import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Home from './pages/Home';
 import Buttons from './components/Buttons';
-import Tables_Votos from './components/Tables_votos';
+import Tables_Votos from './components/Tables_Votos';
 import SearchResults from "./pages/SearchResults";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import { PrivateRoute } from "./components/PrivateRoute";
+import Profile from "./pages/Profile";
+import { AuthProvider } from './components/AuthContext';
+import { PublicRoute } from "./components/PublicRoute";
 
 function App() {
   const [estados, setEstados] = useState([]);
@@ -41,6 +45,7 @@ function App() {
     <div className="h-screen bg-gradient-to-r from-blue-300 to-purple-200 text-white">
 
     <Router>
+      <AuthProvider>
       <Header />
 
       <Routes>
@@ -135,10 +140,18 @@ function App() {
           path = "/search"
           element = {
             <SearchResults/>}/>
-        <Route path = "/login" element = {<Login/>}/>
-        <Route path = "/register" element = {<Register/>}/>
 
+        <Route element={<PublicRoute />}>
+          <Route path = "/login" element = {<Login/>}/>
+          <Route path = "/register" element = {<Register/>}/>
+          
+        </Route>
+        
+        <Route element={<PrivateRoute />}>
+                        <Route path="/profile" element={<Profile />} />
+                    </Route>
       </Routes>
+      </AuthProvider>
     </Router>
     </div>
   );

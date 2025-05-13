@@ -1,7 +1,10 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from './AuthContext'; 
 
 function Header() {
     const navigate = useNavigate();
+    const { token, logout } = useAuth();
+
     return (
       <header className="bg-gradient-to-r from-blue-900 to-purple-900 text-white shadow-lg">
         {/* Top Bar */}
@@ -9,12 +12,33 @@ function Header() {
           <h1 className="text-3xl font-extrabold tracking-wide">
             Votos de Venezuela 2024
           </h1>
-          <button onClick = { () => navigate("/login") } className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition cursor-pointer">
-            Iniciar Sesión
-          </button>
+          
+          {token ? (
+            <div className="flex gap-4">
+              <button 
+                onClick={() => navigate("/profile")} 
+                className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition cursor-pointer"
+              >
+                Perfil
+              </button>
+              <button 
+                onClick={logout} 
+                className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition cursor-pointer"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => navigate("/login")} 
+              className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition cursor-pointer"
+            >
+              Iniciar Sesión
+            </button>
+          )}
         </div>
   
-        {/* Navigation Bar */}
+        {/* Nav Bar */}
         <nav className="bg-blue-700">
           <ul className="flex justify-center space-x-8 p-4 text-lg font-medium">
             <li>
